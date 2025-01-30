@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Prompt Assistant</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+            box-sizing: border-box;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0 0 1rem 0;
+            font-size: 0.9em;
+            color: var(--vscode-foreground);
+            font-weight: 600;
+        }
+
+        #promptInput {
+            width: 100%;
+            padding: 0.6rem;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+            font-family: var(--vscode-font-family);
+            line-height: 1.4;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        #promptInput:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.6rem;
+            margin-top: 1rem;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0.7rem;
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--vscode-font-family);
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .action-button:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+            transform: translateY(-1px);
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+        .service-controls {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 1.2rem;
+        }
+
+        #llmService {
+            flex: 1;
+            padding: 0.4rem 0.6rem;
+            background-color: var(--vscode-dropdown-background);
+            color: var(--vscode-dropdown-foreground);
+            border: 1px solid var(--vscode-dropdown-border);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="section">
+        <textarea id="promptInput" placeholder="Start typing your prompt here..."></textarea>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <span>Export Generated Prompt Options</span>
+        </div>
+
+        <div class="button-group">
+            <button class="action-button" id="copyButton">
+                📋 Copy
+            </button>
+            <button class="action-button" id="newTabButton">
+                ↗ New Tab
+            </button>
+        </div>
+
+        <div class="service-controls">
+            <select id="llmService">
+                <option value="chatgpt">ChatGPT</option>
+                <option value="claude">Claude</option>
+            </select>
+            <button class="action-button" id="openLLMButton">
+                🌐 Open
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+        const input = document.getElementById('promptInput');
+        input.focus();
+
+        input.addEventListener('input', () => {
+            vscode.postMessage({ command: 'onPromptInputChange', text: input.value });
+        });
+
+        document.getElementById('copyButton').addEventListener('click', async () => {
+            vscode.postMessage({ command: 'copyToClipboard', text: input.value });
+        });
+
+        document.getElementById('newTabButton').addEventListener('click', () => {
+            vscode.postMessage({ command: 'newFile', text: input.value });
+        });
+
+        document.getElementById('openLLMButton').addEventListener('click', () => {
+            const service = document.getElementById('llmService').value;
+            vscode.postMessage({ command: 'openInBrowser', service, prompt: input.value });
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                document.getElementById('openLLMButton').click();
+            }
+        });
+    </script>
+</body>
+
+</html>

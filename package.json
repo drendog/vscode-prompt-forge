@@ -1,0 +1,125 @@
+{
+  "name": "prompt-forge",
+  "displayName": "prompt-forge",
+  "description": "Craft LLM-Ready Code Context for LLMs",
+  "repository": "https://codeberg.org/drendog/vscode-prompt-forge",
+  "license": "AGPL-3.0-or-later",
+  "version": "0.0.1",
+  "publisher": "drendog",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "prompt-forge",
+          "title": "LLM Prompt Generator",
+          "icon": "$(output-view-icon)"
+        }
+      ]
+    },
+    "views": {
+      "prompt-forge": [
+        {
+          "id": "promptInput",
+          "name": "Prompt Generation",
+          "contextualTitle": "LLM Prompt Input",
+          "icon": "$(output-view-icon)",
+          "type": "webview"
+        },
+        {
+          "id": "fileSelectorTree",
+          "name": "File Selector for Prompt Context",
+          "contextualTitle": "LLM Prompt Files"
+        },
+        {
+          "id": "quickSettings",
+          "name": "Quick Settings",
+          "contextualTitle": "Quick Settings",
+          "visibility": "collapsed",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "extension.addActiveEditor",
+          "when": "resourceScheme == 'file' && !prompt-forge:activeFileSelected",
+          "group": "navigation",
+          "title": "📜 +"
+        },
+        {
+          "command": "extension.removeActiveEditor",
+          "when": "resourceScheme == 'file' && prompt-forge:activeFileSelected",
+          "group": "navigation",
+          "title": "📜 -"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "extension.toggleSelection",
+          "when": "resourceScheme == file",
+          "group": "prompt-forge"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "extension.generatePrompt",
+        "title": "Generate LLM Prompt",
+        "icon": "$(output-view-icon)"
+      },
+      {
+        "command": "extension.addActiveEditor",
+        "title": "📜 +"
+      },
+      {
+        "command": "extension.removeActiveEditor",
+        "title": "📜 -"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "pnpm run check-types && pnpm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "pnpm run check-types && pnpm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.96.0",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.16.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.7.2"
+  },
+  "files": [
+    "dist",
+    "media"
+  ],
+  "dependencies": {
+    "fast-xml-parser": "^4.5.1"
+  }
+}
