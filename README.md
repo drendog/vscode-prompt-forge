@@ -1,5 +1,7 @@
 # 🔨 Prompt Forge
 
+[Main Repo](https://codeberg.org/drendog/vscode-prompt-forge) | [Temp Repo](https://github.com/drendog/vscode-prompt-forge/tree/main)
+
 > Forge the perfect prompts from your codebase 🔥
 
 A vscode extension that makes it a breeze to generate context-rich prompts for your favorite LLMs. Whether you're working with ChatGPT, Claude, or others, Prompt Forge helps you craft the perfect prompts by seamlessly integrating your codebase.
