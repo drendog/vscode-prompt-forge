@@ -4,7 +4,7 @@
   "description": "Craft LLM-Ready Code Context for LLMs",
   "repository": "https://codeberg.org/drendog/vscode-prompt-forge",
   "license": "AGPL-3.0-or-later",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "drendog",
   "keywords": [
     "prompt",
