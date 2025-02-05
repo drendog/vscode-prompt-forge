@@ -1,13 +1,12 @@
 import * as vscode from "vscode";
 import { SelectionState } from "../states/SelectionState";
-import { ErrorMessages, StorageKeys } from "../constants";
+import { StorageKeys } from "../constants";
 import { IFileSystemService } from "../services/FileSystemService";
 import { FileProcessorService } from "../services/FileProcessorService";
 import { PromptBuilderService } from "../services/PromptBuilderService";
 
 export async function expandUris(uris: vscode.Uri[]): Promise<vscode.Uri[]> {
   const allFiles: vscode.Uri[] = [];
-
   const tasks = uris.map(async (uri) => {
     try {
       const stat = await vscode.workspace.fs.stat(uri);
@@ -23,9 +22,7 @@ export async function expandUris(uris: vscode.Uri[]): Promise<vscode.Uri[]> {
       console.error(`Error expanding ${uri.fsPath}:`, err);
     }
   });
-
   await Promise.all(tasks);
-
   return Array.from(new Set(allFiles.map((uri) => uri.toString()))).map(
     (uriStr) => vscode.Uri.parse(uriStr)
   );
@@ -53,7 +50,7 @@ export async function generateFullPrompt(
 ): Promise<string> {
   const selectedFiles = selectionState.getSelectedFiles();
   if (selectedFiles.length === 0) {
-    throw new Error(ErrorMessages.FileReadError("No files selected"));
+    return "";
   }
 
   const fileProcessor = new FileProcessorService(fileSystemService);

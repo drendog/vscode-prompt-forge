@@ -32,7 +32,11 @@ export class FileTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     item.contextValue = element.isDirectory ? "directory" : "file";
 
     if (element.isDirectory) {
-      await this.setDirectoryCheckboxState(item, element.uri);
+      // Delegate to SelectionState to compute the directory checkbox state.
+      const { checkboxState, description } =
+        await this.selectionState.getDirectoryCheckboxState(element.uri);
+      item.checkboxState = checkboxState;
+      item.description = description;
     } else {
       item.checkboxState = this.selectionState.isSelected(element.uri)
         ? vscode.TreeItemCheckboxState.Checked
@@ -41,32 +45,6 @@ export class FileTreeProvider implements vscode.TreeDataProvider<TreeNode> {
     }
 
     return item;
-  }
-
-  private async setDirectoryCheckboxState(
-    item: vscode.TreeItem,
-    uri: vscode.Uri
-  ): Promise<void> {
-    try {
-      const files = await vscode.workspace.findFiles(
-        new vscode.RelativePattern(uri, "**/*")
-      );
-      const total = files.length;
-      const selected = files.filter((f) =>
-        this.selectionState.isSelected(f)
-      ).length;
-
-      if (total > 0 && selected === total) {
-        item.checkboxState = vscode.TreeItemCheckboxState.Checked;
-        item.description = "";
-      } else {
-        item.checkboxState = vscode.TreeItemCheckboxState.Unchecked;
-        item.description = selected > 0 && selected < total ? "(partial)" : "";
-      }
-    } catch (error) {
-      console.error("Error computing directory selection:", error);
-      item.checkboxState = vscode.TreeItemCheckboxState.Unchecked;
-    }
   }
 
   async getChildren(element?: TreeNode): Promise<TreeNode[]> {

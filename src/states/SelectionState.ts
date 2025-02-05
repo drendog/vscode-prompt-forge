@@ -3,6 +3,7 @@ import { StorageKeys } from "../constants";
 
 export class SelectionState {
   private readonly selectedFiles = new Set<string>();
+  private isUpdating = false;
 
   constructor(private readonly storage: vscode.Memento) {
     this.loadSavedState();
@@ -24,6 +25,90 @@ export class SelectionState {
   public async deselectFile(uri: vscode.Uri): Promise<void> {
     this.selectedFiles.delete(uri.toString());
     await this.saveState();
+  }
+
+  public async getDirectoryCheckboxState(uri: vscode.Uri): Promise<{
+    checkboxState: vscode.TreeItemCheckboxState;
+    description: string;
+  }> {
+    try {
+      const files = await vscode.workspace.findFiles(
+        new vscode.RelativePattern(uri, "**/*")
+      );
+      const total = files.length;
+      const selectedCount = files.filter((file) =>
+        this.selectedFiles.has(file.toString())
+      ).length;
+
+      if (total > 0 && selectedCount === total) {
+        return {
+          checkboxState: vscode.TreeItemCheckboxState.Checked,
+          description: "",
+        };
+      } else if (selectedCount > 0 && selectedCount < total) {
+        return {
+          checkboxState: vscode.TreeItemCheckboxState.Unchecked,
+          description: "(partial)",
+        };
+      } else {
+        return {
+          checkboxState: vscode.TreeItemCheckboxState.Unchecked,
+          description: "",
+        };
+      }
+    } catch (error) {
+      console.error("Error computing directory selection state:", error);
+      return {
+        checkboxState: vscode.TreeItemCheckboxState.Unchecked,
+        description: "",
+      };
+    }
+  }
+
+  private async withLock(operation: () => Promise<void>): Promise<void> {
+    while (this.isUpdating) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    this.isUpdating = true;
+    try {
+      await operation();
+    } finally {
+      this.isUpdating = false;
+    }
+  }
+
+  public async handleCheckboxChanges(
+    changes: Map<vscode.Uri, vscode.TreeItemCheckboxState>
+  ): Promise<void> {
+    await this.withLock(async () => {
+      try {
+        const validChanges = new Map<
+          vscode.Uri,
+          vscode.TreeItemCheckboxState
+        >();
+        for (const [uri, state] of changes.entries()) {
+          if (
+            state === vscode.TreeItemCheckboxState.Checked ||
+            state === vscode.TreeItemCheckboxState.Unchecked
+          ) {
+            validChanges.set(uri, state);
+          } else {
+            console.warn(
+              `Ignoring unsupported checkbox state for ${uri.toString()}`
+            );
+          }
+        }
+        const [fileChanges, dirChanges] = await this.categorizeChanges(
+          validChanges
+        );
+        this.handleFileChanges(fileChanges);
+        await this.handleDirectoryChanges(dirChanges, fileChanges);
+        await this.saveState();
+      } catch (error) {
+        console.error("Error handling checkbox changes:", error);
+        throw error;
+      }
+    });
   }
 
   private async categorizeChanges(
@@ -49,7 +134,6 @@ export class SelectionState {
         fileChanges.push([uri, state]);
       }
     }
-
     return [fileChanges, dirChanges];
   }
 
@@ -75,7 +159,6 @@ export class SelectionState {
       if (this.hasDescendantToggled(dirPrefix, fileChanges)) {
         continue;
       }
-
       await this.updateDirectorySelection(dirUri, dirPrefix, state);
     }
   }
@@ -99,27 +182,28 @@ export class SelectionState {
     dirPrefix: string,
     state: vscode.TreeItemCheckboxState
   ): Promise<void> {
-    if (state === vscode.TreeItemCheckboxState.Checked) {
-      const filesInDir = await vscode.workspace.findFiles(
-        new vscode.RelativePattern(dirUri, "**/*")
+    try {
+      if (state === vscode.TreeItemCheckboxState.Checked) {
+        const filesInDir = await vscode.workspace.findFiles(
+          new vscode.RelativePattern(dirUri, "**/*")
+        );
+        for (const fileUri of filesInDir) {
+          this.selectedFiles.add(fileUri.toString());
+        }
+      } else {
+        const toRemove = Array.from(this.selectedFiles).filter((selected) =>
+          selected.startsWith(dirPrefix)
+        );
+        for (const selected of toRemove) {
+          this.selectedFiles.delete(selected);
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error updating directory selection for ${dirUri.toString()}:`,
+        error
       );
-      filesInDir.forEach((fileUri) =>
-        this.selectedFiles.add(fileUri.toString())
-      );
-    } else {
-      Array.from(this.selectedFiles)
-        .filter((selected) => selected.startsWith(dirPrefix))
-        .forEach((selected) => this.selectedFiles.delete(selected));
     }
-  }
-
-  public async handleCheckboxChanges(
-    changes: Map<vscode.Uri, vscode.TreeItemCheckboxState>
-  ): Promise<void> {
-    const [fileChanges, dirChanges] = await this.categorizeChanges(changes);
-    this.handleFileChanges(fileChanges);
-    await this.handleDirectoryChanges(dirChanges, fileChanges);
-    await this.saveState();
   }
 
   private loadSavedState(): void {

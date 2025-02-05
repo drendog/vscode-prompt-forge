@@ -80,9 +80,33 @@ function registerTreeView(
     const changes = new Map(
       e.items.map(([element, state]) => [element.uri, state])
     );
+
     await services.selectionState.handleCheckboxChanges(changes);
     services.treeProvider.refresh();
-    services.decorationProvider.updateDecorations([...changes.keys()]);
+
+    const urisToUpdate = new Set<vscode.Uri>();
+
+    for (const [element, _] of e.items) {
+      urisToUpdate.add(element.uri);
+      if (element.isDirectory) {
+        try {
+          const descendantFiles = await vscode.workspace.findFiles(
+            new vscode.RelativePattern(element.uri, "**/*")
+          );
+          descendantFiles.forEach((uri) => urisToUpdate.add(uri));
+        } catch (err) {
+          console.error(
+            "Error fetching descendant URIs for decoration update:",
+            err
+          );
+          vscode.window.showErrorMessage(
+            `Error fetching descendant URIs for decoration update: ${err}`
+          );
+        }
+      }
+    }
+
+    services.decorationProvider.updateDecorations(Array.from(urisToUpdate));
     await updateTokenCount(context, services);
   });
 
@@ -181,7 +205,7 @@ async function updateTokenCount(
       context,
       services.fileSystemService
     );
-    const tokenCount = Math.ceil(prompt.length / 4);
+    const tokenCount = prompt ? Math.ceil(prompt.length / 4) : 0;
     services.statusBarItem.text = `${Decoration.Badge} Tokens: ~${tokenCount}`;
   } catch (error) {
     console.error("Error updating token count:", error);
