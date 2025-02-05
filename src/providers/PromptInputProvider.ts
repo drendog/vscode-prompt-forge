@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { generateFullPrompt } from "../commands/generatePrompt";
 import { SelectionState } from "../states/SelectionState";
 import { StorageKeys } from "../constants";
 import { WebviewManager } from "../managers/WebviewManager";
 import { FileSystemService } from "../services/FileSystemService";
+import { generateFullPrompt } from "../utils";
 
 interface LLMService {
   name: string;

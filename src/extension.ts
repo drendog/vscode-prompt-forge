@@ -2,11 +2,11 @@ import * as vscode from "vscode";
 import { FileTreeProvider } from "./providers/FileTreeProvider";
 import { SelectionState } from "./states/SelectionState";
 import { SelectedFileDecorationProvider } from "./providers/FileDecorationProvider";
-import { generateFullPrompt } from "./commands/generatePrompt";
 import { FileSystemService } from "./services/FileSystemService";
 import { Commands, Decoration } from "./constants";
 import { PromptInputProvider } from "./providers/PromptInputProvider";
 import { QuickSettingsProvider } from "./providers/QuickSettingsProvider";
+import { generateFullPrompt } from "./utils";
 
 interface ExtensionServices {
   fileSystemService: FileSystemService;
@@ -18,11 +18,11 @@ interface ExtensionServices {
 export async function activate(context: vscode.ExtensionContext) {
   const services = initializeServices(context);
   const disposables = [
-    ...registerStatusBar(context, services),
+    ...registerStatusBar(services),
     ...registerTreeView(context, services),
     ...registerWebviews(context, services),
     ...registerCommands(context, services),
-    ...registerWorkspaceListeners(services),
+    ...registerWorkspaceListeners(context, services),
   ];
 
   context.subscriptions.push(...disposables);
@@ -58,10 +58,7 @@ interface ExtensionServices {
   statusBarItem: vscode.StatusBarItem;
 }
 
-function registerStatusBar(
-  context: vscode.ExtensionContext,
-  services: ExtensionServices
-): vscode.Disposable[] {
+function registerStatusBar(services: ExtensionServices): vscode.Disposable[] {
   services.statusBarItem.text = `${Decoration.Badge} Tokens: 0`;
   services.statusBarItem.show();
 
@@ -151,20 +148,25 @@ function registerCommands(
 }
 
 function registerWorkspaceListeners(
+  context: vscode.ExtensionContext,
   services: ExtensionServices
 ): vscode.Disposable[] {
   return [
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
       services.treeProvider.refresh();
+      updateTokenCount(context, services);
     }),
     vscode.workspace.onDidCreateFiles(() => {
       services.treeProvider.refresh();
+      updateTokenCount(context, services);
     }),
     vscode.workspace.onDidDeleteFiles(() => {
       services.treeProvider.refresh();
+      updateTokenCount(context, services);
     }),
     vscode.workspace.onDidRenameFiles(() => {
       services.treeProvider.refresh();
+      updateTokenCount(context, services);
     }),
   ];
 }
