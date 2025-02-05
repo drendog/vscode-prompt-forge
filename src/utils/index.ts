@@ -68,6 +68,10 @@ export async function generateFullPrompt(
       StorageKeys.PromptHeader,
       "Analyze the following codebase structure and contents:\n\n[PROJECT OVERVIEW]\n"
     ),
+    thinkingTagsEnabled: context.workspaceState.get(
+      StorageKeys.ThinkingTags,
+      false
+    ),
   });
 
   return promptBuilder.buildPrompt(

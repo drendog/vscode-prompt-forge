@@ -59,14 +59,17 @@ export class PromptInputProvider implements vscode.WebviewViewProvider {
 
     this.webviewManager.onMessage(
       "onPromptInputChange",
-      this.handlePromptInputChange
+      this.handlePromptInputChange.bind(this)
     );
     this.webviewManager.onMessage(
       "copyToClipboard",
-      this.handleCopyToClipboard
+      this.handleCopyToClipboard.bind(this)
     );
-    this.webviewManager.onMessage("newFile", this.handleNewFile);
-    this.webviewManager.onMessage("openInBrowser", this.handleOpenInBrowser);
+    this.webviewManager.onMessage("newFile", this.handleNewFile.bind(this));
+    this.webviewManager.onMessage(
+      "openInBrowser",
+      this.handleOpenInBrowser.bind(this)
+    );
   }
 
   private async handlePromptInputChange(message: {

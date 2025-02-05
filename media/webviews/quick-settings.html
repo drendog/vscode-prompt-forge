@@ -21,6 +21,9 @@
             font-size: 0.9em;
             color: var(--vscode-foreground);
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .setting-select {
@@ -36,6 +39,10 @@
             outline: none;
             border-color: var(--vscode-focusBorder);
         }
+
+        .setting-checkbox {
+            margin: 0;
+        }
     </style>
 </head>
 
@@ -48,9 +55,17 @@
         </select>
     </div>
 
+    <div class="setting-group">
+        <label class="setting-label">
+            <input type="checkbox" id="thinkingTags" class="setting-checkbox">
+            Enable thinking tags
+        </label>
+    </div>
+
     <script>
         const vscode = acquireVsCodeApi();
         const formatSelect = document.getElementById('formatSelect');
+        const thinkingTags = document.getElementById('thinkingTags');
 
         formatSelect.addEventListener('change', () => {
             vscode.postMessage({
@@ -59,10 +74,19 @@
             });
         });
 
+        thinkingTags.addEventListener('change', () => {
+            vscode.postMessage({
+                command: 'updateThinkingTags',
+                enabled: thinkingTags.checked
+            });
+        });
+
         window.addEventListener('message', event => {
             const message = event.data;
             if (message.type === 'setFormat') {
                 formatSelect.value = message.format;
+            } else if (message.type === 'setThinkingTags') {
+                thinkingTags.checked = message.enabled;
             }
         });
     </script>

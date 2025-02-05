@@ -30,6 +30,15 @@ export class QuickSettingsProvider implements vscode.WebviewViewProvider {
       format: currentFormat,
     });
 
+    const thinkingTagsEnabled = this.context.workspaceState.get<boolean>(
+      StorageKeys.ThinkingTags,
+      false
+    );
+    webviewView.webview.postMessage({
+      type: "setThinkingTags",
+      enabled: thinkingTagsEnabled,
+    });
+
     webviewView.webview.onDidReceiveMessage(async (message) => {
       if (message.command === "updateFormat") {
         await this.context.workspaceState.update(
@@ -38,6 +47,14 @@ export class QuickSettingsProvider implements vscode.WebviewViewProvider {
         );
         vscode.window.showInformationMessage(
           `Prompt format updated to ${message.format}`
+        );
+      } else if (message.command === "updateThinkingTags") {
+        await this.context.workspaceState.update(
+          StorageKeys.ThinkingTags,
+          message.enabled
+        );
+        vscode.window.showInformationMessage(
+          `Thinking tags ${message.enabled ? "enabled" : "disabled"}`
         );
       }
     });

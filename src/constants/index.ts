@@ -2,6 +2,7 @@ export const StorageKeys = {
   SelectedFiles: "selectedFiles",
   PromptHeader: "promptHeader",
   PromptFormat: "promptFormat",
+  ThinkingTags: "thinkingTags",
 };
 
 export const Commands = {
